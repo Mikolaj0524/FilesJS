@@ -24,12 +24,6 @@ window.addEventListener("load", ()=>{
     script3.src = "https://unpkg.com/mammoth/mammoth.browser.min.js";
     document.body.appendChild(script3);
 
-    /*
-    let script4 = document.createElement("script");
-    script4.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
-    document.body.appendChild(script4);
-    */
-
     let link = document.createElement("link");
     link.rel = "stylesheet";
     link.href = "./lib/prism.css";
@@ -48,9 +42,6 @@ window.addEventListener("load", ()=>{
         .mammoth-content img { width: 100%; }
     `;
     document.head.appendChild(style);
-
-    /* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
-    document.querySelectorAll("a")[0].click();
 });
 
 class Extentions{
@@ -368,6 +359,7 @@ function CreateFrame(){
     let div = document.createElement("div");
     div.id = "FilesJS_fileFrame";
     div.style = `
+        color-scheme: dark;
         user-select: none;
         font-family: Arial, Helvetica, sans-serif;
         position: fixed;
