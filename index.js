@@ -20,6 +20,14 @@ window.addEventListener("load", ()=>{
     script2.src = "https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js";
     document.body.appendChild(script2);
 
+    let script3 = document.createElement("script");
+    script3.src = "https://unpkg.com/mammoth/mammoth.browser.min.js";
+    document.body.appendChild(script3);
+
+    let script4 = document.createElement("script");
+    script4.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
+    document.body.appendChild(script4);
+
     let style = document.createElement("link");
     style.rel = "stylesheet";
     style.href = "./lib/prism.css";
@@ -32,7 +40,7 @@ window.addEventListener("load", ()=>{
 class Extentions{
     static audio = [".mp3", ".wav", ".ogg", ".aac", ".opus", ".webm"];
     static video = [".mp4", ".webm", ".ogv"];
-    static office = [".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp", ".rtf", ".docm", ".dotx", ".xlsm", ".xltx", ".pptm", ".potx", ".pdf", ".xps"];
+    static office = [".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp", ".rtf", ".docm", ".dotx", ".xlsm", ".xltx", ".pptm", ".potx", ".pdf"];
     static image = [".jpg", ".jpeg", ".jfif", ".pjpeg", ".pjp", ".png", ".gif", ".svg", ".apng", ".webp", ".avif", ".bmp", ".ico", ".cur"];
     static text = [".txt", ".csv", ".log", ".xml", ".json", ".html", ".htm", ".css", ".js", ".ts", ".tsx", ".jsx", ".md", ".bat", ".cmd", ".ini", ".conf", ".yml", ".yaml", ".toml", ".reg", ".py", ".java", ".c", ".cpp", ".h", ".hpp", ".rb", ".php", ".sh", ".pl", ".asm", ".sql", ".ps1", ".cfg", ".dockerfile", ".gitignore", ".gitattributes", ".env", ".tex"];
 
@@ -76,7 +84,6 @@ window.addEventListener("wheel", function(event) {
         event.preventDefault();
     }
 }, { passive: false });
-
 function ElementClicked(el){
     let path = el.getAttribute("data-filesjs");
     let extention = "";
@@ -89,7 +96,6 @@ function ElementClicked(el){
         
     }
 }
-
 function GetFileName(path) {
     if (!path) 
         return "";
@@ -97,7 +103,6 @@ function GetFileName(path) {
     const parts = path.split(/[/\\]/);
     return parts.pop();
 }
-
 async function DisplayFile(ext, path) {
     if (opened) document.getElementById("fileFrame").remove();
     CreateFrame();
@@ -139,7 +144,7 @@ async function DisplayFile(ext, path) {
                 element2.style.width = "100%";
                 element2.style.height = "75vh";
             }
-            else if(ext == ".xlsx"){
+            else if(ext == ".xls" || ext == ".xlsx" || ext == ".xlsm" || ext == ".xltx"){
                 element2 = document.createElement("div");
 
                 let element3 = document.createElement("div");
@@ -210,8 +215,37 @@ async function DisplayFile(ext, path) {
                     return result;
                 }
             }
-            else if(ext == ".docx"){
-                
+            else if (ext.toLowerCase() === ".docx") {
+                try {
+                    const response = await fetch(path);
+                    if (!response.ok) throw new Error("Failed to fetch the file");
+
+                    const arrayBuffer = await response.arrayBuffer();
+
+                    const zip = await JSZip.loadAsync(arrayBuffer);
+
+                    const documentXmlFile = zip.files["word/document.xml"];
+                    if (!documentXmlFile) {
+                    element2.textContent = "Invalid DOCX file: document.xml missing.";
+                    return;
+                    }
+
+                    const xmlText = await documentXmlFile.async("text");
+
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(xmlText, "application/xml");
+
+                    const textNodes = xmlDoc.querySelectorAll("w\\:t");
+
+                    let fullText = "";
+                    textNodes.forEach(node => {
+                    fullText += node.textContent + " ";
+                    });
+
+                    element2.textContent = fullText.trim();
+                } catch (error) {
+                    element2.textContent = "Error reading DOCX: " + error.message;
+                }
             }
 
             break;
@@ -338,7 +372,9 @@ function CreateFrame(){
     let nav = document.createElement("nav");
     nav.innerHTML = "<b class=\"x\">FilesJS</b>";
     nav.style = `
+        color: lightgray;
         width: 100vw;
+        height: 5vh;
         margin: 0 auto;
         background: rgba(0, 0, 0, 0.6);
         padding: 1%;
@@ -352,6 +388,7 @@ function CreateFrame(){
         flex: 1;
         display: flex;
         overflow: hidden;
+        height: 82vh;
         width: 100vw;
         align-items: center;
         justify-content: center;
@@ -363,21 +400,20 @@ function CreateFrame(){
     let footer = document.createElement("footer");
     footer.style = `
         height: 13vh;
+        max-height: 13vh;
         width: 100vw;
         background: rgba(0, 0, 0, 0.8);
         color: white;
         display: flex;
         align-items: center;
         user-select: none;
-        justify-content: space-evenly;  /* <-- changed from center */
+        justify-content: space-evenly;
         z-index: 1010;
         overflow-y: auto;
         max-width: 100vw;
-        padding: 0 1vw;  /* optional, add side padding */
+        padding: 0 1vw;
     `;
 
-
-    
     libElements.forEach(el => {
         let item = document.createElement("a");
 
@@ -388,7 +424,7 @@ function CreateFrame(){
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            width: 8vw;      /* fixed width for equal spacing */
+            width: 8vw;
             height: 100%;
         `;
         item.innerHTML = `
