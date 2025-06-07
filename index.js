@@ -7,6 +7,13 @@
 /*              Copyright 2025              */
 /*                                          */
 /* ---------------------------------------- */
+/*                                          */
+/*           Used External Lib's            */
+/*      SheetsJS (https://sheetjs.com)      */
+/* Mamooth (https://github.com/mwilliamson) */
+/*      PrismJS (https://prismjs.com)       */
+/*                                          */
+/* ---------------------------------------- */
 
 window.addEventListener("load", ()=>{
     let script = document.createElement("script");
@@ -42,6 +49,8 @@ window.addEventListener("load", ()=>{
         .mammoth-content img { width: 100%; }
     `;
     document.head.appendChild(style);
+
+    document.querySelectorAll("a")[0].click();
 });
 
 class Extentions{
@@ -406,18 +415,45 @@ function CreateFrame(){
     });
 
     let nav = document.createElement("nav");
-    nav.innerHTML = "<b class=\"x\">FilesJS</b>";
-    nav.style = `
+    nav.style.cssText = `
         color: lightgray;
         width: 100vw;
-        height: 3vh;
+        height: 50px;
         margin: 0 auto;
+        position: relative;
         background: rgba(0, 0, 0, 0.6);
-        padding: 1%;
+        padding: 0 20px;
         user-select: none;
         z-index: 1010;
+        font-family: sans-serif;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
     `;
 
+    let b = document.createElement("b");
+    b.innerText = "Navbar";
+
+    let exit = document.createElement("b");
+    exit.innerText = "🗙 Close ";
+    exit.style.cssText = `
+        cursor: pointer;
+        color: lightgray;
+        background-color: #dd4444;
+
+        padding: 4px 20px 4px 16px;
+        border-radius: 3px;
+        right: 0;
+        translate: -50% 0;
+        position: absolute;
+    `;
+    exit.addEventListener("click", ()=>{
+        opened = false;
+        div.remove();
+    });
+
+    nav.appendChild(b);
+    nav.appendChild(exit);
     let content = document.createElement("main");
     content.id = "FilesJS_content";
     content.style = `
@@ -462,6 +498,7 @@ function CreateFrame(){
             cursor: pointer;
             width: 8vw;
             height: 100%;
+            min-width: 100px;
         `;
         item.innerHTML = `
                 <svg xmlns="http://www.w3.org/2000/svg" height="20%" fill="currentColor" class="bi bi-file-earmark-fill" viewBox="0 0 16 16"><path d="M4 0h5.293A1 1 0 0 1 10 .293L13.707 4a1 1 0 0 1 .293.707V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2m5.5 1.5v2a1 1 0 0 0 1 1h2z"/></svg>
