@@ -24,13 +24,29 @@ window.addEventListener("load", ()=>{
     script3.src = "https://unpkg.com/mammoth/mammoth.browser.min.js";
     document.body.appendChild(script3);
 
+    /*
     let script4 = document.createElement("script");
     script4.src = "https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js";
     document.body.appendChild(script4);
+    */
 
-    let style = document.createElement("link");
-    style.rel = "stylesheet";
-    style.href = "./lib/prism.css";
+    let link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = "./lib/prism.css";
+    document.head.appendChild(link);
+
+    let style = document.createElement("style");
+    style.innerHTML = `
+        .mammoth-content { line-height: 1.6; color: #333; padding: 1em; background-color: #f9f9f9; border-radius: 6px; box-shadow: 0 0 8px rgba(0,0,0,0.1); max-width: 1000px; padding: 0 20px; margin: 1em auto; }
+        .mammoth-content p { margin-bottom: 1em; }
+        .mammoth-content h1, .mammoth-content h2, .mammoth-content h3 { font-weight: bold; margin-top: 1.5em; margin-bottom: 0.5em; }
+        .mammoth-content strong { font-weight: bold; }
+        .mammoth-content em { font-style: italic; }
+        .mammoth-content ul, .mammoth-content ol { margin-left: 1.5em; margin-bottom: 1em; }
+        .mammoth-content a { color: #0366d6; text-decoration: none;}
+        .mammoth-content a:hover { text-decoration: underline; }
+        .mammoth-content img { width: 100%; }
+    `;
     document.head.appendChild(style);
 
     /* xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx */
@@ -40,7 +56,7 @@ window.addEventListener("load", ()=>{
 class Extentions{
     static audio = [".mp3", ".wav", ".ogg", ".aac", ".opus", ".webm"];
     static video = [".mp4", ".webm", ".ogv"];
-    static office = [".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp", ".rtf", ".docm", ".dotx", ".xlsm", ".xltx", ".pptm", ".potx", ".pdf"];
+    static office = [".docx", ".xls", ".xlsx", ".xlsm", ".xltx", ".pdf"];
     static image = [".jpg", ".jpeg", ".jfif", ".pjpeg", ".pjp", ".png", ".gif", ".svg", ".apng", ".webp", ".avif", ".bmp", ".ico", ".cur"];
     static text = [".txt", ".csv", ".log", ".xml", ".json", ".html", ".htm", ".css", ".js", ".ts", ".tsx", ".jsx", ".md", ".bat", ".cmd", ".ini", ".conf", ".yml", ".yaml", ".toml", ".reg", ".py", ".java", ".c", ".cpp", ".h", ".hpp", ".rb", ".php", ".sh", ".pl", ".asm", ".sql", ".ps1", ".cfg", ".dockerfile", ".gitignore", ".gitattributes", ".env", ".tex"];
 
@@ -69,6 +85,9 @@ class Extentions{
 let elements = document.querySelectorAll('a');
 let libElements = [];
 let opened = false;
+let currentIndex;
+let delay = false;
+let currentPath;
 elements.forEach(el => {
     if (el.hasAttribute("data-filesjs") && el.getAttribute("data-filesjs") != "" && el.getAttribute("data-filesjs") != null) {
         libElements.push(el);
@@ -104,9 +123,9 @@ function GetFileName(path) {
     return parts.pop();
 }
 async function DisplayFile(ext, path) {
-    if (opened) document.getElementById("fileFrame").remove();
+    if (opened) document.getElementById("FilesJS_fileFrame").remove();
     CreateFrame();
-    let content = document.getElementById("content");
+    let content = document.getElementById("FilesJS_content");
     let fileType = Extentions.getCategory(ext);
     let name = GetFileName(path);
     let element = document.createElement("div");
@@ -123,7 +142,7 @@ async function DisplayFile(ext, path) {
         z-index: 999;
         width: 100%;
     `;
-
+    currentPath = path;
     switch(fileType){
         case "audio":
             element2 = document.createElement("audio");
@@ -215,37 +234,31 @@ async function DisplayFile(ext, path) {
                     return result;
                 }
             }
-            else if (ext.toLowerCase() === ".docx") {
-                try {
-                    const response = await fetch(path);
-                    if (!response.ok) throw new Error("Failed to fetch the file");
+            else if (ext == ".docx" || ext == ".doc") {
+                element2 = document.createElement("div");
+                let element3 = document.createElement("div");
+                element2.style.overflowY = "scroll";
+                element2.style.height = "75vh";
+                element2.style.background = "lightgray";
+                element2.style.color = "black";
 
-                    const arrayBuffer = await response.arrayBuffer();
+                fetch(path)
+                    .then(response => {
+                        if (!response.ok) throw new Error("Failed to fetch file");
+                        return response.arrayBuffer();
+                    })
+                    .then(arrayBuffer => {
+                        return mammoth.convertToHtml({ arrayBuffer });
+                    })
+                    .then(result => {
+                        element2.innerHTML = result.value;
 
-                    const zip = await JSZip.loadAsync(arrayBuffer);
-
-                    const documentXmlFile = zip.files["word/document.xml"];
-                    if (!documentXmlFile) {
-                    element2.textContent = "Invalid DOCX file: document.xml missing.";
-                    return;
-                    }
-
-                    const xmlText = await documentXmlFile.async("text");
-
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(xmlText, "application/xml");
-
-                    const textNodes = xmlDoc.querySelectorAll("w\\:t");
-
-                    let fullText = "";
-                    textNodes.forEach(node => {
-                    fullText += node.textContent + " ";
+                        element2.classList.add("mammoth-content");
+                    })
+                    .catch(error => {
+                        element3.textContent = "Error: " + error.message;
                     });
-
-                    element2.textContent = fullText.trim();
-                } catch (error) {
-                    element2.textContent = "Error reading DOCX: " + error.message;
-                }
+                element2.appendChild(element3);
             }
 
             break;
@@ -353,7 +366,7 @@ async function DisplayFile(ext, path) {
 function CreateFrame(){
     opened = true;
     let div = document.createElement("div");
-    div.id = "fileFrame";
+    div.id = "FilesJS_fileFrame";
     div.style = `
         user-select: none;
         font-family: Arial, Helvetica, sans-serif;
@@ -369,12 +382,43 @@ function CreateFrame(){
         overflow: hidden;
     `;
 
+
+    window.addEventListener("keyup", (event) => {
+        if(!opened){ return; }
+        if(delay) { return; }
+        delay = true;
+        let footer = document.getElementById("FilesJS_footer");
+        Array.from(footer.children).forEach((el, index) => {
+            if(el.getAttribute("data-filesjs") == currentPath){
+                currentIndex = index;
+            }
+        });
+        if (event.key === "ArrowLeft") {
+            
+            if (currentIndex > 0) {
+                currentIndex--;
+                currentPath = footer.children[currentIndex].getAttribute("data-filesjs");
+                footer.children[currentIndex].click();
+                console.log(currentIndex);
+            }
+        }
+        else if (event.key === "ArrowRight") {
+            if (currentIndex < footer.children.length-1) {
+                currentIndex++;
+                currentPath = footer.children[currentIndex].getAttribute("data-filesjs");
+                footer.children[currentIndex].click();
+                console.log(currentIndex);
+            }
+        }
+        setTimeout(()=>{delay=false;}, 300);
+    });
+
     let nav = document.createElement("nav");
     nav.innerHTML = "<b class=\"x\">FilesJS</b>";
     nav.style = `
         color: lightgray;
         width: 100vw;
-        height: 5vh;
+        height: 3vh;
         margin: 0 auto;
         background: rgba(0, 0, 0, 0.6);
         padding: 1%;
@@ -383,7 +427,7 @@ function CreateFrame(){
     `;
 
     let content = document.createElement("main");
-    content.id = "content";
+    content.id = "FilesJS_content";
     content.style = `
         flex: 1;
         display: flex;
@@ -398,6 +442,7 @@ function CreateFrame(){
     `;
 
     let footer = document.createElement("footer");
+    footer.id = "FilesJS_footer"
     footer.style = `
         height: 13vh;
         max-height: 13vh;
@@ -416,7 +461,6 @@ function CreateFrame(){
 
     libElements.forEach(el => {
         let item = document.createElement("a");
-
         item.style = `
             text-align: center;
             display: flex;
@@ -432,7 +476,7 @@ function CreateFrame(){
                 <br />
                 ${GetFileName(el.getAttribute("data-filesjs"))}
             `
-        item.setAttribute("data-filesjs", el)
+        item.setAttribute("data-filesjs", el.getAttribute("data-filesjs"));
         item.addEventListener("click", () => {
             ElementClicked(el);
         });
