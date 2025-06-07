@@ -13,11 +13,34 @@ window.addEventListener("load", ()=>{
 
 
 class Extentions{
-    audio = [".mp3", ".wav", ".ogg", ".aac", ".opus", ".webm"];
-    video = [".mp4", ".webm", ".ogv"];
-    office = [".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp", ".rtf", ".docm", ".dotx", ".xlsm", ".xltx", ".pptm", ".potx", ".pdf", ".xps"];
-    image = [".jpg", ".jpeg", ".jfif", ".pjpeg", ".pjp", ".png", ".gif", ".svg", ".apng", ".webp", ".avif", ".bmp", ".ico", ".cur"];
-    text = [".txt", ".csv", ".log", ".xml", ".json", ".html", ".htm", ".css", ".js", ".ts", ".tsx", ".jsx", ".md", ".bat", ".cmd", ".ini", ".conf", ".yml", ".yaml", ".toml", ".reg", ".py", ".java", ".c", ".cpp", ".h", ".hpp", ".rb", ".php", ".sh", ".pl", ".asm", ".sql", ".ps1", ".cfg", ".dockerfile", ".gitignore", ".gitattributes", ".env", ".tex"];
+    static audio = [".mp3", ".wav", ".ogg", ".aac", ".opus", ".webm"];
+    static video = [".mp4", ".webm", ".ogv"];
+    static office = [".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".odt", ".ods", ".odp", ".rtf", ".docm", ".dotx", ".xlsm", ".xltx", ".pptm", ".potx", ".pdf", ".xps"];
+    static image = [".jpg", ".jpeg", ".jfif", ".pjpeg", ".pjp", ".png", ".gif", ".svg", ".apng", ".webp", ".avif", ".bmp", ".ico", ".cur"];
+    static text = [".txt", ".csv", ".log", ".xml", ".json", ".html", ".htm", ".css", ".js", ".ts", ".tsx", ".jsx", ".md", ".bat", ".cmd", ".ini", ".conf", ".yml", ".yaml", ".toml", ".reg", ".py", ".java", ".c", ".cpp", ".h", ".hpp", ".rb", ".php", ".sh", ".pl", ".asm", ".sql", ".ps1", ".cfg", ".dockerfile", ".gitignore", ".gitattributes", ".env", ".tex"];
+
+    static getCategory(ext){
+        if(this.audio.includes(ext)){
+            return "audio";
+        }
+        else if(this.video.includes(ext)){
+            return "video";
+        }
+        else if(this.office.includes(ext)){
+            return "office";
+        }
+        else if(this.image.includes(ext)){
+            return "image";
+        }
+        else if(this.text.includes(ext)){
+            return "text";
+        }
+        else{
+            return "N/A";
+        }
+    }
+
+
 }
 
 let elements = document.querySelectorAll('a');
@@ -61,24 +84,59 @@ function GetFileName(path) {
 }
 
 function DisplayFile(ext, path) {
-    if (opened) {
-        document.getElementById("fileFrame").remove();
-    }
-
+    if (opened) document.getElementById("fileFrame").remove();
     CreateFrame();
+    let content = document.getElementById("content");
+    let moveFlag = false;
+    let name = GetFileName(path);
+    let element = document.createElement("div");
+    let title = document.createElement("p");
+    title.style.textAlign = "center";
+    title.innerText = name;
+    element.appendChild(title);
 
-    let element = document.createElement("img");
-    element.src = path;
-    element.alt = path;
+    switch(Extentions.getCategory(ext)){
+        case "audio":
+            let audio = document.createElement("audio");
+            audio.controls = true;
+            audio.src = path;
+            audio.alt = path;
+            element.appendChild(audio);
+            break;
+        case "video":
+            let video = document.createElement("video");
+            video.controls = true;
+            video.src = path;
+            video.alt = path;
+            element.appendChild(video);
+            break;
+        case "office":
+            element = document.createElement("img");
+            break;
+        case "image":
+            moveFlag = true;
+            element = document.createElement("img");
+            break;
+        case "text":
+            element = document.createElement("img");
+            break;
+        case "N/A":
+            element = document.createElement("img");
+            break;
+    }
+    
+    
     element.style = `
         display: block;
         user-select: none;
-        cursor: grab;
         position: absolute;
         z-index: 999;
     `;
 
-    
+
+
+
+
     let startX, startY, currentX = 0, currentY = 0, isDragging = false, scale = 1;
     function updateTransform() {
         element.style.transform = `translate(${currentX}px, ${currentY}px) scale(${scale})`;
@@ -95,27 +153,30 @@ function DisplayFile(ext, path) {
             updateTransform();
         }
     });
-    element.addEventListener("mousedown", (event) => {
-        element.style.transition = "transform 0s";
-        isDragging = true;
-        startX = event.clientX - currentX;
-        startY = event.clientY - currentY;
-        element.style.cursor = "grabbing";
-    });
-    document.addEventListener("mousemove", (event) => {
-        if (!isDragging) return;
-        currentX = event.clientX - startX;
-        currentY = event.clientY - startY;
-        updateTransform();
-    });
-    document.addEventListener("mouseup", () => {
-        isDragging = false;
+    if(moveFlag){
         element.style.cursor = "grab";
-    });
-    element.addEventListener("dragstart", (e) => {
-        e.preventDefault();
-    });
-    document.getElementById("content").appendChild(element);
+        element.addEventListener("mousedown", (event) => {
+            element.style.transition = "transform 0s";
+            isDragging = true;
+            startX = event.clientX - currentX;
+            startY = event.clientY - currentY;
+            element.style.cursor = "grabbing";
+        });
+        document.addEventListener("mousemove", (event) => {
+            if (!isDragging) return;
+            currentX = event.clientX - startX;
+            currentY = event.clientY - startY;
+            updateTransform();
+        });
+        document.addEventListener("mouseup", () => {
+            isDragging = false;
+            element.style.cursor = "grab";
+        });
+        element.addEventListener("dragstart", (e) => {
+            e.preventDefault();
+        });
+    }
+    content.appendChild(element);
 }
 
 
